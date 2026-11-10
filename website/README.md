@@ -9,7 +9,8 @@ the mobile menu, scrollspy, reveal animations, gallery and FAQ.
 | File | Purpose |
 |---|---|
 | `index.html` | The entire site: markup, CSS and JS inline |
-| `reelbox-1.0.apk` | The signed release APK the Download buttons serve (2.2 MB) |
+| `reelbox-1.1.apk` | The signed release APK the Download buttons serve (2.2 MB) |
+| `version.json` | Latest release (version code, name, APK URL, notes) — the app reads this at launch to offer updates |
 | `home_real.webp` | Home screen — hero mockup + gallery |
 | `detail_real.webp` | Detail screen — gallery |
 | `providers_real.webp` | "Where to watch" — spotlight + gallery |
@@ -51,7 +52,7 @@ nginx). The only runtime requirement is HTTPS — Google Fonts and the TMDB link
 The APK lives next to `index.html`, so the buttons just point at it:
 
 ```html
-<a href="reelbox-1.0.apk" download id="download-btn" data-apk-url="reelbox-1.0.apk">
+<a href="reelbox-1.1.apk" download id="download-btn" data-apk-url="reelbox-1.1.apk">
 ```
 
 Rebuild with `./gradlew :app:assembleRelease` (needs `keystore.properties` and the release
@@ -62,6 +63,20 @@ into this folder under a versioned name, then update `href`, `data-apk-url`, and
 If you'd rather link a GitHub release than host the binary, point `href` and `data-apk-url`
 at the release URL and drop the local APK. With `data-apk-url` empty, the button shows an
 inline hint in `#download-status` instead of doing nothing.
+
+## Ship an app update
+
+Installed copies of Reelbox (1.1 and later) fetch `version.json` at launch and show an
+"Update available" prompt when its `versionCode` is higher than their own.
+
+1. Bump `versionCode` and `versionName` in `app/build.gradle.kts`.
+2. `./gradlew :app:assembleRelease` — it must be signed with the same release keystore,
+   or Android refuses to install it over the existing app.
+3. Copy `app/build/outputs/apk/release/app-release.apk` here as `reelbox-<version>.apk`
+   and remove the old one.
+4. Update `version.json` (`versionCode`, `versionName`, `apkUrl`, `notes`) and the
+   download links / version cells in `index.html`.
+5. Commit and push — Vercel redeploys and users are prompted on their next launch.
 
 ## Update the repo link
 

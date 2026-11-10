@@ -40,12 +40,14 @@ android {
         applicationId = "dev.reelbox"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")
         buildConfigField("String", "TMDB_READ_TOKEN", "\"$tmdbToken\"")
         buildConfigField("String", "DEFAULT_REGION", "\"GH\"")
+        // The app checks this file at launch and offers the release it describes.
+        buildConfigField("String", "UPDATE_URL", "\"https://reelbox-omega.vercel.app/version.json\"")
     }
 
     signingConfigs {

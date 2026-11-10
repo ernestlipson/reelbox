@@ -73,6 +73,8 @@ fun ReelboxApp() {
         nav.navigate("player/$type/$id?title=$encodedTitle")
     }
 
+    UpdatePrompt()
+
     // Height for Android system navigation bar (3-button or gesture)
     val navBarHeight = 56.dp
 
