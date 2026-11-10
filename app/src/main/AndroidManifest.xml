@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <queries>
+        <!-- Streaming apps to detect if installed -->
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="com.disney.disneyplus" />
+        <package android:name="com.wbd.stream" />
+        <package android:name="com.hulu.plus" />
+        <package android:name="com.cbs.app" />
+        <package android:name="com.peacocktv.peacockandroid" />
+        <package android:name="com.crunchyroll.crunchyroll" />
+        <package android:name="com.tubitv" />
+        <package android:name="tv.pluto.android" />
+        <package android:name="com.google.android.videos" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.showmax.letterbox" />
+        <package android:name="air.com.vudu.air.DownloaderTablet" />
+        <package android:name="com.britbox.player" />
+        <package android:name="com.bydeluxe.d3.android.program.starz" />
+        <package android:name="com.epix.epix" />
+        <package android:name="ca.bellmedia.crave" />
+        <package android:name="au.com.stan.stan" />
+        <package android:name="com.canal.android.canal" />
+        <package android:name="tv.wuaki" />
+        <package android:name="com.graymatrix.did" />
+        <package android:name="com.mslavstream.sonyliv" />
+        <package android:name="com.jio.media.ondemand" />
+        <package android:name="com.mubi" />
+        <package android:name="com.dramafever.shudder" />
+        <package android:name="com.discovery.discoveryplus.android" />
+        <package android:name="bbc.iplayer.android" />
+        <package android:name="air.ITVMobilePlayer" />
+        <package android:name="com.apple.atve.androidtv.appletv" />
+
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="market" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".ReelboxApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Reelbox">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Reelbox">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

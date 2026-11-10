@@ -1,0 +1,14 @@
+# Normalize line endings across platforms
+* text=auto
+
+*.bat         text eol=crlf
+*.sh          text eol=lf
+gradlew       text eol=lf
+
+# Binary assets — never let git "fix" these
+*.apk         binary
+*.jar         binary
+*.png         binary
+*.webp        binary
+*.jpg         binary
+*.ttf         binary

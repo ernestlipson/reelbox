@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer rounded square -->
+    <path
+        android:fillColor="#FF4B4B"
+        android:pathData="M54,26 L54,26 A28,28 0 1,1 53.99,26 Z" />
+
+    <!-- Play triangle -->
+    <path
+        android:fillColor="#FFF7F7FA"
+        android:pathData="M48,42 L48,66 L68,54 Z" />
+</vector>

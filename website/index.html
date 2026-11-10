@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0A0A0C">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Reelbox — a native Android movie and TV browser powered by TMDB. See what's trending, in theaters, and where to legally stream in your region. No accounts, no tracking.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Reelbox — Your Cinema Browser">
+  <meta property="og:description" content="Native Android app. TMDB-powered catalog. Legal streaming availability for 12 regions. No accounts. No tracking.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Reelbox — Your Cinema Browser. Native Android movie and TV browser.">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Reelbox — Your Cinema Browser">
+  <meta name="twitter:description" content="Native Android app. TMDB-powered catalog. Legal streaming availability for 12 regions. No accounts. No tracking.">
+  <meta name="twitter:image" content="og-image.png">
+
+  <title>Reelbox — Your Cinema Browser</title>
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="image" href="home_real.webp" type="image/webp">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>document.documentElement.classList.add('js')</script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Reelbox",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Android 8.0 (API 26) and later",
+    "description": "Native Android movie and TV browser powered by TMDB, with legal streaming availability for 12 regions.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "featureList": [
+      "Trending, in theaters and coming soon rows",
+      "Debounced search across movies and TV",
+      "Where to watch: legal streaming providers per region",
+      "Local watchlist stored on device",
+      "Trailers, cast and similar titles"
+    ]
+  }
+  </script>
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS  —  mirrors reelbox/DESIGN.md
+       ============================================================ */
+    :root {
+      --ink:            #0A0A0C;
+      --ink-elevated:   #14141A;
+      --ink-card:       #1B1B23;
+      --ink-card-2:     #23232C;
+      --accent:         #FF4B4B;
+      --accent-hover:   #FF6666;
+      --accent-soft:    #2A1417;
+      --gold:           #FFC94A;
+      --violet:         #8B5CF6;
+      --text-primary:   #F3F3F6;
+      --text-secondary: #9A9AA8;
+      --text-tertiary:  #7E7E8C;
+      --hairline:       #26262F;
+      --hairline-soft:  #1E1E26;
+      --hairline-hard:  #34343F;
+
+      --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+      --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 32px;
+      --space-5: 48px;
+      --space-6: 64px;
+      --space-7: 96px;
+      --space-8: 128px;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+
+      --container-max: 1160px;
+      --header-h: 64px;
+      --gutter: 20px;
+
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 150ms;
+      --duration-normal: 250ms;
+      --duration-slow: 400ms;
+
+      --ring: 0 0 0 2px var(--ink), 0 0 0 4px var(--accent);
+    }
+
+    @media (min-width: 640px)  { :root { --gutter: 32px; } }
+    @media (min-width: 1024px) { :root { --gutter: 40px; --header-h: 72px; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      :root {
+        --duration-fast: 0ms;
+        --duration-normal: 0ms;
+        --duration-slow: 0ms;
+      }
+      html { scroll-behavior: auto !important; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ============================================================
+       RESET
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--ink);
+      color: var(--text-primary);
+      line-height: 1.6;
+      font-size: 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    img, svg, video { max-width: 100%; height: auto; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button, input, summary { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+    ul, ol { list-style: none; }
+    h1, h2, h3, h4 { font-weight: inherit; font-size: inherit; }
+
+    ::selection { background: var(--accent); color: #fff; }
+
+    /* ============================================================
+       UTILITIES
+       ============================================================ */
+    .container {
+      width: 100%;
+      max-width: var(--container-max);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+    }
+
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: 8px; left: 8px;
+      z-index: 200;
+      transform: translateY(-200%);
+      padding: 12px 20px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: var(--radius-sm);
+      transition: transform var(--duration-fast) var(--ease-out-expo);
+    }
+    .skip-link:focus-visible { transform: translateY(0); }
+
+    /* ============================================================
+       FOCUS
+       ============================================================ */
+    :focus-visible {
+      outline: none;
+      box-shadow: var(--ring);
+      border-radius: var(--radius-sm);
+    }
+    a:focus-visible, button:focus-visible, summary:focus-visible {
+      border-radius: var(--radius-sm);
+    }
+
+    /* ============================================================
+       BUTTONS
+       ============================================================ */
+    .btn {
+      --btn-bg: transparent;
+      --btn-fg: var(--text-primary);
+      --btn-border: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-1);
+      min-height: 44px;
+      padding: 12px 24px;
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border: 1px solid var(--btn-border);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.01em;
+      text-align: center;
+      white-space: nowrap;
+      transition:
+        background var(--duration-fast) var(--ease-out-expo),
+        color var(--duration-fast) var(--ease-out-expo),
+        border-color var(--duration-fast) var(--ease-out-expo),
+        transform var(--duration-fast) var(--ease-out-expo);
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn svg { width: 18px; height: 18px; flex: none; }
+
+    .btn-primary { --btn-bg: var(--accent); --btn-fg: #fff; }
+    .btn-primary:hover { --btn-bg: var(--accent-hover); }
+
+    .btn-secondary { --btn-bg: var(--ink-elevated); --btn-fg: var(--text-primary); --btn-border: var(--hairline); }
+    .btn-secondary:hover { --btn-bg: var(--ink-card); --btn-border: var(--accent); }
+
+    .btn-ghost { --btn-fg: var(--text-secondary); --btn-border: var(--hairline); }
+    .btn-ghost:hover { --btn-fg: var(--text-primary); --btn-border: var(--hairline-hard); }
+
+    .btn-lg { padding: 15px 30px; font-size: 15px; border-radius: var(--radius-md); }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .header {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 100;
+      background: rgba(10, 10, 12, 0.72);
+      backdrop-filter: saturate(180%) blur(18px);
+      -webkit-backdrop-filter: saturate(180%) blur(18px);
+      border-bottom: 1px solid transparent;
+      transition: border-color var(--duration-normal) var(--ease-out-expo),
+                  background var(--duration-normal) var(--ease-out-expo);
+    }
+    .header.scrolled {
+      background: rgba(10, 10, 12, 0.9);
+      border-bottom-color: var(--hairline);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      height: var(--header-h);
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 3px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 19px;
+      letter-spacing: 0.02em;
+      flex: none;
+    }
+    .logo-mark { color: var(--accent); }
+    .logo-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      align-self: center;
+      margin-left: 2px;
+      opacity: 0.7;
+    }
+
+    .nav-desktop { display: none; gap: 4px; }
+    .nav-link {
+      position: relative;
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color var(--duration-fast) var(--ease-out-expo);
+    }
+    .nav-link:hover { color: var(--text-primary); }
+    .nav-link[aria-current="true"] { color: var(--text-primary); }
+    .nav-link[aria-current="true"]::after {
+      content: "";
+      position: absolute;
+      left: 14px; right: 14px; bottom: 2px;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--accent);
+    }
+
+    .header-actions { display: flex; align-items: center; gap: var(--space-2); }
+    .header-cta { display: none; }
+
+    .nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px; height: 44px;
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      border: 1px solid var(--hairline);
+      background: var(--ink-elevated);
+      transition: border-color var(--duration-fast) var(--ease-out-expo);
+    }
+    .nav-toggle:hover { border-color: var(--hairline-hard); }
+    .nav-toggle svg { width: 20px; height: 20px; }
+    .nav-toggle .icon-close { display: none; }
+    .nav-toggle[aria-expanded="true"] .icon-close { display: block; }
+    .nav-toggle[aria-expanded="true"] .icon-menu { display: none; }
+
+    /* Mobile panel */
+    .mobile-nav {
+      display: grid;
+      gap: 2px;
+      overflow: hidden;
+      max-height: 0;
+      background: rgba(10, 10, 12, 0.98);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid transparent;
+      transition: max-height var(--duration-normal) var(--ease-out-expo),
+                  border-color var(--duration-normal) var(--ease-out-expo);
+    }
+    .mobile-nav.open { max-height: 420px; border-bottom-color: var(--hairline); }
+    .mobile-nav a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px var(--gutter);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--hairline-soft);
+    }
+    .mobile-nav a:hover { color: var(--text-primary); }
+    .mobile-nav a svg { width: 16px; height: 16px; opacity: 0.5; }
+    .mobile-nav .btn { margin: 12px var(--gutter) 20px; }
+    .mobile-nav a.btn {
+      color: var(--btn-fg);
+      border-top: 0;
+      justify-content: center;
+    }
+
+    @media (min-width: 1024px) {
+      .nav-desktop { display: flex; }
+      .header-cta { display: inline-flex; }
+      .nav-toggle, .mobile-nav { display: none; }
+    }
+
+    /* ============================================================
+       HERO
+       ============================================================ */
+    .hero {
+      position: relative;
+      padding: calc(var(--header-h) + var(--space-6)) 0 var(--space-7);
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: -20% -10% auto -10%;
+      height: 720px;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(255, 75, 75, 0.14) 0%, transparent 68%),
+        radial-gradient(ellipse 45% 45% at 88% 30%, rgba(139, 92, 246, 0.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background-image: radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px);
+      background-size: 3px 3px;
+      opacity: 0.5;
+      mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
+      -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: var(--space-6);
+      align-items: center;
+    }
+    @media (min-width: 1000px) {
+      .hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: var(--space-7); }
+    }
+
+    .hero-content { position: relative; z-index: 2; max-width: 62ch; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px 7px 8px;
+      margin-bottom: var(--space-3);
+      background: var(--ink-elevated);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-full);
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.01em;
+    }
+    .eyebrow strong { color: var(--text-primary); font-weight: 600; }
+
+    @media (max-width: 479px) {
+      .eyebrow { font-size: 12px; gap: 8px; padding-right: 12px; }
+      .eyebrow .eyebrow-optional { display: none; }
+    }
+    .eyebrow .pill-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px 3px 8px;
+      background: var(--accent-soft);
+      color: var(--accent-hover);
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .eyebrow .pill-dot::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(38px, 7vw, 60px);
+      line-height: 1.04;
+      letter-spacing: -0.035em;
+      margin-bottom: var(--space-3);
+      text-wrap: balance;
+    }
+    .hero-title .accent { color: var(--accent); }
+
+    .hero-subtitle {
+      font-size: clamp(16px, 2.2vw, 18.5px);
+      color: var(--text-secondary);
+      max-width: 56ch;
+      margin-bottom: var(--space-4);
+      line-height: 1.68;
+    }
+    .hero-subtitle strong { color: var(--text-primary); font-weight: 600; }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-5);
+    }
+    @media (max-width: 479px) {
+      .hero-actions .btn { width: 100%; justify-content: center; }
+    }
+
+    .hero-facts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3) var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--hairline);
+    }
+    @media (min-width: 640px) {
+      .hero-facts { gap: var(--space-5); }
+    }
+    @media (max-width: 479px) {
+      .hero-facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3);
+      }
+    }
+    .fact { display: flex; flex-direction: column; gap: 3px; }
+    .fact-value {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 26px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .fact-label {
+      font-size: 11.5px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-weight: 600;
+    }
+
+    /* --- Phone mockup --- */
+    .hero-visual {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+    }
+    .phone-wrap { position: relative; width: 100%; max-width: 300px; }
+
+    .phone-glow {
+      position: absolute;
+      inset: 12% -22% 4%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 75, 75, 0.26) 0%, rgba(139, 92, 246, 0.12) 45%, transparent 72%);
+      filter: blur(28px);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .phone-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 9 / 20;
+      background: var(--ink);
+      border-radius: 34px;
+      border: 7px solid var(--ink-elevated);
+      outline: 1px solid var(--hairline-hard);
+      overflow: hidden;
+      transform: rotate(-1.4deg);
+      transition: transform var(--duration-slow) var(--ease-out-expo);
+    }
+    .phone-frame:hover { transform: rotate(0deg) translateY(-4px); }
+    .phone-frame::before {
+      content: "";
+      position: absolute;
+      top: 10px; left: 50%;
+      transform: translateX(-50%);
+      width: 74px; height: 18px;
+      background: #000;
+      border-radius: 9999px;
+      z-index: 5;
+    }
+    .phone-screen {
+      position: absolute;
+      inset: 22px 6px 6px;
+      border-radius: 22px;
+      overflow: hidden;
+      background: var(--ink);
+    }
+    .phone-screen img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+
+    /* Floating provider card overlapping the phone */
+    .provider-peek {
+      position: absolute;
+      right: -30px;
+      bottom: 8%;
+      z-index: 4;
+      width: 214px;
+      padding: 14px;
+      background: rgba(20, 20, 26, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--hairline-hard);
+      border-radius: var(--radius-md);
+      animation: float 6s ease-in-out infinite;
+    }
+    @media (max-width: 999px) {
+      .provider-peek { position: static; width: 100%; max-width: 320px; margin: 20px auto 0; animation: none; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    .provider-peek-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .provider-peek-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    .region-chip {
+      padding: 3px 9px;
+      background: var(--accent-soft);
+      color: var(--accent-hover);
+      border-radius: var(--radius-full);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    .provider-list { display: grid; gap: 6px; }
+    .provider-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+    }
+    .provider-row .dot {
+      width: 16px; height: 16px;
+      flex: none;
+      border-radius: 5px;
+      background: var(--ink-card-2);
+      border: 1px solid var(--hairline-hard);
+    }
+    .provider-row .tag {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--gold);
+    }
+
+    /* ============================================================
+       SECTION SHELL
+       ============================================================ */
+    .section { padding: var(--space-6) 0; position: relative; }
+    @media (min-width: 768px) { .section { padding: var(--space-7) 0; } }
+    .section-alt { background: var(--ink-elevated); }
+    .section-alt .section-header { max-width: 68ch; }
+
+    .section-header { max-width: 60ch; margin-bottom: var(--space-6); }
+    .section-header.center { margin-inline: auto; text-align: center; }
+
+    .section-label {
+      display: inline-block;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: var(--space-2);
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(26px, 4.2vw, 38px);
+      line-height: 1.14;
+      letter-spacing: -0.025em;
+      text-wrap: balance;
+    }
+    .section-lede {
+      margin-top: var(--space-3);
+      color: var(--text-secondary);
+      font-size: 16.5px;
+      line-height: 1.68;
+      max-width: 62ch;
+    }
+    .section-header.center .section-lede { margin-inline: auto; }
+
+    /* ============================================================
+       FEATURE SPOTLIGHT  (Where to watch)
+       ============================================================ */
+    .spotlight {
+      display: grid;
+      gap: var(--space-6);
+      align-items: center;
+    }
+    @media (min-width: 1000px) {
+      .spotlight { grid-template-columns: 1fr 0.85fr; gap: var(--space-7); }
+    }
+
+    .spotlight-points { display: grid; gap: var(--space-3); margin-top: var(--space-4); }
+    .point {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .point-icon {
+      width: 34px; height: 34px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      background: var(--accent-soft);
+      border-radius: var(--radius-sm);
+      color: var(--accent);
+    }
+    .point-icon svg { width: 17px; height: 17px; }
+    .point-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+    .point-desc { font-size: 14.5px; color: var(--text-secondary); line-height: 1.6; }
+
+    .shot-frame {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      margin-inline: auto;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--hairline);
+      background: var(--ink);
+      overflow: hidden;
+    }
+    .shot-frame img { width: 100%; }
+    .shot-caption {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 18px;
+      border-top: 1px solid var(--hairline);
+      background: var(--ink-elevated);
+      font-size: 12.5px;
+      color: var(--text-secondary);
+    }
+    .shot-caption .tag-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+    .shot-caption .tag-live::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .category-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--space-4); }
+    .category-chips span {
+      padding: 7px 14px;
+      background: var(--ink-card);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-full);
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .category-chips span.accent { color: var(--accent-hover); border-color: rgba(255,75,75,0.35); background: var(--accent-soft); }
+
+    /* ============================================================
+       FEATURES GRID
+       ============================================================ */
+    .features-grid {
+      display: grid;
+      gap: var(--space-3);
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 700px)  { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1080px) { .features-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .feature-card {
+      position: relative;
+      background: var(--ink-elevated);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      overflow: hidden;
+      transition: border-color var(--duration-normal) var(--ease-out-expo),
+                  transform var(--duration-normal) var(--ease-out-expo),
+                  background var(--duration-normal) var(--ease-out-expo);
+    }
+    .feature-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity var(--duration-normal) var(--ease-out-expo);
+    }
+    .feature-card:hover {
+      border-color: var(--hairline-hard);
+      background: var(--ink-card);
+      transform: translateY(-3px);
+    }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      width: 44px; height: 44px;
+      background: var(--accent-soft);
+      border-radius: var(--radius-md);
+      display: grid;
+      place-items: center;
+      margin-bottom: var(--space-3);
+      color: var(--accent);
+      flex: none;
+    }
+    .feature-icon svg { width: 22px; height: 22px; }
+    .feature-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 17px;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+    .feature-desc { color: var(--text-secondary); font-size: 14.5px; line-height: 1.62; }
+
+    /* ============================================================
+       HOW IT WORKS
+       ============================================================ */
+    .steps {
+      display: grid;
+      gap: var(--space-3);
+      counter-reset: step;
+    }
+    @media (min-width: 760px)  { .steps { grid-template-columns: repeat(3, 1fr); } }
+
+    .step {
+      position: relative;
+      padding: var(--space-4);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--hairline-hard);
+    }
+    .step::before {
+      counter-increment: step;
+      content: "0" counter(step);
+      display: block;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: var(--space-2);
+    }
+    .step-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 17px;
+      margin-bottom: 6px;
+    }
+    .step-desc { font-size: 14.5px; color: var(--text-secondary); line-height: 1.62; }
+
+    /* ============================================================
+       SCREENSHOT GALLERY
+       ============================================================ */
+    .gallery { position: relative; }
+
+    .gallery-track {
+      display: flex;
+      gap: var(--space-3);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-left: 0;
+      padding: 4px 4px var(--space-3);
+      margin: -4px -4px 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--hairline-hard) transparent;
+    }
+    .gallery-track::-webkit-scrollbar { height: 8px; }
+    .gallery-track::-webkit-scrollbar-track { background: transparent; }
+    .gallery-track::-webkit-scrollbar-thumb { background: var(--hairline-hard); border-radius: 4px; }
+    .gallery-track::-webkit-scrollbar-thumb:hover { background: #45454F; }
+
+    .shot-card {
+      flex: 0 0 78%;
+      max-width: 300px;
+      scroll-snap-align: center;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--hairline);
+      background: var(--ink);
+      transition: transform var(--duration-normal) var(--ease-out-expo),
+                  border-color var(--duration-normal) var(--ease-out-expo);
+    }
+    .shot-card:hover { transform: translateY(-4px); border-color: var(--hairline-hard); }
+    @media (min-width: 700px)  { .shot-card { flex-basis: 42%; } }
+    @media (min-width: 1000px) { .shot-card { flex-basis: 31%; } }
+    @media (min-width: 1200px) { .shot-card { flex-basis: 27%; } }
+
+    .shot-card .shot-media {
+      position: relative;
+      background: var(--ink-elevated);
+      border-bottom: 1px solid var(--hairline);
+    }
+    .shot-card img { width: 100%; }
+    .shot-card .shot-body { padding: var(--space-2) var(--space-2) var(--space-3); }
+    .shot-card h3 {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 15.5px;
+      margin-bottom: 3px;
+    }
+    .shot-card p { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
+
+    .gallery-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-top: var(--space-3);
+    }
+    .gallery-dots { display: flex; gap: 8px; }
+    .gallery-dot {
+      width: 8px; height: 8px;
+      padding: 0;
+      border-radius: 50%;
+      background: var(--hairline-hard);
+      transition: background var(--duration-fast) var(--ease-out-expo),
+                  width var(--duration-fast) var(--ease-out-expo);
+    }
+    .gallery-dot[aria-current="true"] { background: var(--accent); width: 22px; border-radius: 4px; }
+    .gallery-arrows { display: flex; gap: 8px; }
+    .gallery-arrow {
+      width: 42px; height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid var(--hairline);
+      background: var(--ink-elevated);
+      color: var(--text-primary);
+      transition: border-color var(--duration-fast) var(--ease-out-expo),
+                      background var(--duration-fast) var(--ease-out-expo),
+                      opacity var(--duration-fast) var(--ease-out-expo);
+    }
+    .gallery-arrow:hover:not(:disabled) { border-color: var(--accent); background: var(--ink-card); }
+    .gallery-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+    .gallery-arrow svg { width: 18px; height: 18px; }
+
+    /* ============================================================
+       FAQ
+       ============================================================ */
+    .faq { display: grid; gap: 10px; max-width: 780px; }
+    .faq-item {
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      background: var(--ink);
+      overflow: hidden;
+      transition: border-color var(--duration-fast) var(--ease-out-expo);
+    }
+    .faq-item[open] { border-color: var(--hairline-hard); }
+    .faq-item summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      padding: 18px 20px;
+      font-weight: 600;
+      font-size: 15.5px;
+      list-style: none;
+      cursor: pointer;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after {
+      content: "";
+      flex: none;
+      width: 12px; height: 12px;
+      border-right: 2px solid var(--text-tertiary);
+      border-bottom: 2px solid var(--text-tertiary);
+      transform: rotate(45deg) translate(-3px, -3px);
+      transition: transform var(--duration-normal) var(--ease-out-expo);
+    }
+    .faq-item[open] summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+    .faq-item summary:hover { color: var(--accent); }
+    .faq-answer {
+      padding: 0 20px 20px;
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      line-height: 1.68;
+      max-width: 66ch;
+    }
+    .faq-answer code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      background: var(--ink-card);
+      padding: 2px 6px;
+      border-radius: 5px;
+      color: var(--text-primary);
+    }
+
+    /* ============================================================
+       DOWNLOAD
+       ============================================================ */
+    .download-wrap {
+      display: grid;
+      gap: var(--space-4);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-xl);
+      background: var(--ink-elevated);
+      overflow: hidden;
+    }
+    @media (min-width: 980px) {
+      .download-wrap { grid-template-columns: 1.05fr 0.95fr; }
+    }
+
+    .download-main { padding: var(--space-5); }
+    @media (min-width: 980px) { .download-main { padding: var(--space-6); } }
+
+    .app-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: var(--space-3);
+    }
+    .app-badge img, .app-badge .app-icon {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      flex: none;
+      border: 1px solid var(--hairline-hard);
+    }
+    .app-badge-text { display: grid; gap: 1px; }
+    .app-badge-text strong {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+    }
+    .app-badge-text span { font-size: 12.5px; color: var(--text-tertiary); }
+
+    .download-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(24px, 3.4vw, 32px);
+      letter-spacing: -0.025em;
+      line-height: 1.18;
+      margin-bottom: var(--space-2);
+      text-wrap: balance;
+    }
+    .download-subtitle { color: var(--text-secondary); font-size: 15.5px; max-width: 52ch; }
+
+    .download-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin: var(--space-4) 0 var(--space-3);
+    }
+    .download-status {
+      min-height: 20px;
+      font-size: 13px;
+      color: var(--gold);
+      line-height: 1.5;
+    }
+
+    .download-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--hairline);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    @media (min-width: 560px) { .download-meta { grid-template-columns: repeat(2, 1fr); } }
+    .download-meta div {
+      background: var(--ink);
+      padding: 14px 16px;
+    }
+    .download-meta dt {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+    .download-meta dd { font-size: 14px; font-weight: 600; }
+
+    .install-steps {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--space-5);
+      border-left: 1px solid var(--hairline);
+      background: var(--ink);
+    }
+    @media (max-width: 979px) { .install-steps { border-left: none; border-top: 1px solid var(--hairline); } }
+
+    .install-steps h3 {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: var(--space-3);
+    }
+    .install-list { display: grid; gap: var(--space-3); counter-reset: inst; }
+    .install-list li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      font-size: 14.5px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .install-list li::before {
+      counter-increment: inst;
+      content: counter(inst);
+      width: 22px; height: 22px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .install-list strong { color: var(--text-primary); font-weight: 600; }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    .footer {
+      margin-top: auto;
+      border-top: 1px solid var(--hairline);
+      background: var(--ink-elevated);
+      padding: var(--space-6) 0 var(--space-4);
+    }
+    .footer-grid {
+      display: grid;
+      gap: var(--space-5);
+    }
+    @media (min-width: 760px) {
+      .footer-grid { grid-template-columns: 1.4fr 1fr 1fr; gap: var(--space-6); }
+    }
+
+    .footer-brand { display: grid; gap: var(--space-2); align-content: start; }
+    .footer-logo {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.02em;
+    }
+    .footer-tagline { font-size: 13.5px; color: var(--text-secondary); max-width: 42ch; line-height: 1.6; }
+
+    .footer-col h4 {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: var(--space-2);
+    }
+    .footer-col ul { display: grid; gap: 10px; }
+    .footer-link {
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: color var(--duration-fast) var(--ease-out-expo);
+    }
+    .footer-link:hover { color: var(--accent); }
+
+    .footer-bottom {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      margin-top: var(--space-5);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--hairline);
+      font-size: 12.5px;
+      color: var(--text-tertiary);
+      line-height: 1.6;
+    }
+    .footer-bottom a { color: var(--text-secondary); text-decoration: underline; text-underline-offset: 3px; }
+    .footer-bottom a:hover { color: var(--accent); }
+    .attribution { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+    .attribution img { height: 18px; width: auto; opacity: 0.75; }
+
+    /* ============================================================
+       SCROLL REVEAL  (only when JS is available)
+       ============================================================ */
+    .js .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity var(--duration-slow) var(--ease-out-expo),
+                  transform var(--duration-slow) var(--ease-out-expo);
+    }
+    .js .reveal.visible { opacity: 1; transform: none; }
+    .js .reveal[data-delay="1"] { transition-delay: 80ms; }
+    .js .reveal[data-delay="2"] { transition-delay: 160ms; }
+    .js .reveal[data-delay="3"] { transition-delay: 240ms; }
+    .js .reveal[data-delay="4"] { transition-delay: 320ms; }
+    .js .reveal[data-delay="5"] { transition-delay: 400ms; }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ==========================================================
+       HEADER
+       ========================================================== -->
+  <header class="header" id="site-header" role="banner">
+    <div class="container header-inner">
+      <a href="#top" class="logo" aria-label="Reelbox — back to top">
+        <span class="logo-mark">REEL</span><span class="logo-text">BOX</span><span class="logo-dot" aria-hidden="true"></span>
+      </a>
+
+      <nav class="nav-desktop" aria-label="Primary">
+        <a class="nav-link" href="#features">Features</a>
+        <a class="nav-link" href="#where-to-watch">Where to watch</a>
+        <a class="nav-link" href="#screenshots">Screenshots</a>
+        <a class="nav-link" href="#download">Download</a>
+      </nav>
+
+      <div class="header-actions">
+        <a href="#download" class="btn btn-primary header-cta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Get the app
+        </a>
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">
+          <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="#features">Features <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+      <a href="#where-to-watch">Where to watch <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+      <a href="#screenshots">Screenshots <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+      <a href="#download">Download <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+      <a class="btn btn-primary" href="#download">Download APK</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ========================================================
+         HERO
+         ======================================================== -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="hero-content reveal">
+            <p class="eyebrow">
+              <span class="pill-dot">Android</span>
+              <strong>Native app</strong>
+              <span class="eyebrow-sep">·</span>
+              <span>TMDB-powered</span>
+              <span class="eyebrow-optional">· No account</span>
+            </p>
+
+            <h1 id="hero-title" class="hero-title">Your <span class="accent">Cinema</span> Browser</h1>
+
+            <p class="hero-subtitle">
+              Trending, in theaters, coming soon — and <strong>exactly where each title is
+              legally streaming in your region</strong>. Dark-only. No sign-up. No tracking.
+            </p>
+
+            <div class="hero-actions">
+              <a href="#download" class="btn btn-primary btn-lg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download for Android
+              </a>
+            </div>
+
+            <div class="hero-facts">
+              <div class="fact">
+                <span class="fact-value">12</span>
+                <span class="fact-label">Regions</span>
+              </div>
+              <div class="fact">
+                <span class="fact-value">0</span>
+                <span class="fact-label">Accounts</span>
+              </div>
+              <div class="fact">
+                <span class="fact-value">0</span>
+                <span class="fact-label">Trackers</span>
+              </div>
+              <div class="fact">
+                <span class="fact-value">19&nbsp;MB</span>
+                <span class="fact-label">APK</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual reveal" data-delay="2">
+            <div class="phone-wrap">
+              <div class="phone-glow" aria-hidden="true"></div>
+
+              <div class="phone-frame">
+                <div class="phone-screen">
+                  <img src="home_real.webp" alt="Reelbox home screen: featured carousel showing The Odyssey, with a Trending Movies row below."
+                       width="540" height="1204" fetchpriority="high" decoding="async">
+                </div>
+              </div>
+
+              <aside class="provider-peek" aria-label="Example of the Where to watch panel">
+                <div class="provider-peek-head">
+                  <span class="provider-peek-title">Where to watch</span>
+                  <span class="region-chip">GH</span>
+                </div>
+                <div class="provider-list">
+                  <div class="provider-row"><span class="dot"></span> Showmax <span class="tag">SUB</span></div>
+                  <div class="provider-row"><span class="dot"></span> Amazon Video <span class="tag">RENT</span></div>
+                  <div class="provider-row"><span class="dot"></span> Google Play <span class="tag">BUY</span></div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         WHERE TO WATCH  (spotlight)
+         ======================================================== -->
+    <section id="where-to-watch" class="section section-alt" aria-labelledby="wtw-title">
+      <div class="container">
+        <div class="spotlight">
+          <div class="reveal">
+            <span class="section-label">The feature that matters</span>
+            <h2 id="wtw-title" class="section-title">Know where it streams — before you press play</h2>
+            <p class="section-lede">
+              Availability is pulled per region from TMDB's watch-providers data and split by how
+              you can watch. Tap any provider logo and the app hands you off to the service itself.
+            </p>
+
+            <div class="spotlight-points">
+              <div class="point">
+                <div class="point-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                </div>
+                <div>
+                  <div class="point-title">Five ways to watch, clearly labelled</div>
+                  <p class="point-desc">Free, free with ads, included with subscription, rent or buy — never a blurred mess of logos.</p>
+                </div>
+              </div>
+              <div class="point">
+                <div class="point-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <div>
+                  <div class="point-title">Region-aware, and it remembers</div>
+                  <p class="point-desc">Switch country with one tap. Your choice persists across launches. Ghana is the default, not the US.</p>
+                </div>
+              </div>
+              <div class="point">
+                <div class="point-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>
+                </div>
+                <div>
+                  <div class="point-title">Real deep links, no dead ends</div>
+                  <p class="point-desc">A logo opens the provider's page in JustWatch, then jumps straight to the app if it's installed on your device.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="category-chips" aria-label="Availability categories">
+              <span class="accent">Free</span>
+              <span>Free with ads</span>
+              <span>Included with subscription</span>
+              <span>Rent</span>
+              <span>Buy</span>
+            </div>
+          </div>
+
+          <figure class="shot-frame reveal" data-delay="2">
+            <img src="providers_real.webp" width="540" height="1204" loading="lazy" decoding="async"
+                 alt="Reelbox detail screen for Resident Evil with the Where to watch panel showing United States region, rent and buy providers including Amazon Video, Apple TV and Fandango, plus cast and similar titles.">
+            <figcaption class="shot-caption">
+              <span class="tag-live">Real screen</span>
+              <span>Resident Evil · region set to United States</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         FEATURES
+         ======================================================== -->
+    <section id="features" class="section" aria-labelledby="features-title">
+      <div class="container">
+        <header class="section-header center reveal">
+          <span class="section-label">What you get</span>
+          <h2 id="features-title" class="section-title">Built for how you actually watch</h2>
+          <p class="section-lede">Six catalog rows load in parallel the moment the app opens. Everything else is one tap away.</p>
+        </header>
+
+        <div class="features-grid">
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            </div>
+            <h3 class="feature-title">Home carousel and rows</h3>
+            <p class="feature-desc">An auto-advancing featured backdrop, then Trending Movies, Trending TV, Top Rated, In Theaters, Popular TV and Coming Soon — all fetched in parallel.</p>
+          </article>
+
+          <article class="feature-card reveal" data-delay="1">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <h3 class="feature-title">Search that works</h3>
+            <p class="feature-desc">Debounced multi-search across movies and TV, laid out as a three-column poster grid. Empty states that guide instead of blame.</p>
+          </article>
+
+          <article class="feature-card reveal" data-delay="2">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <h3 class="feature-title">Where to watch, legally</h3>
+            <p class="feature-desc">Providers per region, grouped by Free, Ads, Subscription, Rent and Buy. Each logo deep-links to the service — never to a pirate mirror.</p>
+          </article>
+
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h3 class="feature-title">Local watchlist</h3>
+            <p class="feature-desc">Saved as JSON in SharedPreferences. No cloud, no account, no sync. Remove one title or clear the lot.</p>
+          </article>
+
+          <article class="feature-card reveal" data-delay="1">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            </div>
+            <h3 class="feature-title">Trailers and cast</h3>
+            <p class="feature-desc">Official YouTube trailers, the top 20 cast with headshots and character names, a similar-titles row and genres as chips.</p>
+          </article>
+
+          <article class="feature-card reveal" data-delay="2">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <h3 class="feature-title">12 regions, one tap away</h3>
+            <p class="feature-desc">Ghana, Nigeria, US, UK, South Africa, Kenya, Canada, India, Germany, France, Australia and Brazil. Tap the region pill to switch.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         HOW IT WORKS
+         ======================================================== -->
+    <section class="section section-alt" aria-labelledby="how-title">
+      <div class="container">
+        <header class="section-header reveal">
+          <span class="section-label">How it works</span>
+          <h2 id="how-title" class="section-title">Three steps, then you're watching</h2>
+        </header>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <h3 class="step-title">Pick your region</h3>
+            <p class="step-desc">The pill in the top bar opens a list of twelve countries. Default is Ghana, and the choice is remembered next launch.</p>
+          </li>
+          <li class="step reveal" data-delay="1">
+            <h3 class="step-title">Browse or search</h3>
+            <p class="step-desc">Scroll the home rows or type into search. Results are debounced, so the app stays responsive on a slow connection.</p>
+          </li>
+          <li class="step reveal" data-delay="2">
+            <h3 class="step-title">Tap a provider</h3>
+            <p class="step-desc">Every logo opens the service in JustWatch and hands off to the installed app when one exists. Nothing is hosted or embedded.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SCREENSHOTS
+         ======================================================== -->
+    <section id="screenshots" class="section section-alt" aria-labelledby="shots-title">
+      <div class="container">
+        <header class="section-header reveal">
+          <span class="section-label">See it in action</span>
+          <h2 id="shots-title" class="section-title">Screenshots from the device</h2>
+          <p class="section-lede">Every frame below was captured on a real phone running the debug build.</p>
+        </header>
+
+        <div class="gallery reveal">
+          <div class="gallery-track" id="gallery-track" tabindex="0" role="region" aria-label="App screenshots, scrollable">
+            <article class="shot-card">
+              <div class="shot-media">
+                <img src="home_real.webp" width="540" height="1204" loading="lazy" decoding="async"
+                     alt="Home screen: REELBOX wordmark, region pill set to Ghana, featured carousel showing The Odyssey with Play and More info buttons, and a Trending Movies poster row.">
+              </div>
+              <div class="shot-body">
+                <h3>Home</h3>
+                <p>Featured carousel and six catalog rows, loaded in parallel.</p>
+              </div>
+            </article>
+
+            <article class="shot-card">
+              <div class="shot-media">
+                <img src="detail_real.webp" width="540" height="1204" loading="lazy" decoding="async"
+                     alt="Detail screen for Resident Evil: full-bleed backdrop with a play button, title, year, runtime, rating, genre chips, Play, Watchlist and Trailer actions, overview text and the Where to watch panel.">
+              </div>
+              <div class="shot-body">
+                <h3>Detail</h3>
+                <p>Backdrop, metadata, genres, trailer and cast.</p>
+              </div>
+            </article>
+
+            <article class="shot-card">
+              <div class="shot-media">
+                <img src="providers_real.webp" width="540" height="1204" loading="lazy" decoding="async"
+                     alt="Scrolled detail screen showing the Where to watch panel for the United States with rent and buy provider logos from Amazon Video, Apple TV and Fandango, a cast row of headshots, and a More like this row.">
+              </div>
+              <div class="shot-body">
+                <h3>Where to watch</h3>
+                <p>Providers by region, grouped by how you can watch.</p>
+              </div>
+            </article>
+
+            <article class="shot-card">
+              <div class="shot-media">
+                <img src="search_real.webp" width="540" height="1204" loading="lazy" decoding="async"
+                     alt="Search screen with the query dune typed into the search field and a three-column poster grid of results including Dune, Dune Prophecy and Dune Part Two, each with a rating badge.">
+              </div>
+              <div class="shot-body">
+                <h3>Search</h3>
+                <p>Debounced, three-column poster grid.</p>
+              </div>
+            </article>
+
+            <article class="shot-card">
+              <div class="shot-media">
+                <img src="watchlist_real.webp" width="540" height="1204" loading="lazy" decoding="async"
+                     alt="Watchlist screen showing two saved titles as posters — Salaar Part 2 and MobLand with a rating — each with an X button to remove it, and a Clear action in the top bar.">
+              </div>
+              <div class="shot-body">
+                <h3>Watchlist</h3>
+                <p>Saved locally as JSON. Nothing leaves the device.</p>
+              </div>
+            </article>
+          </div>
+
+          <div class="gallery-controls">
+            <div class="gallery-dots" id="gallery-dots" role="tablist" aria-label="Screenshot position"></div>
+            <div class="gallery-arrows">
+              <button class="gallery-arrow" id="gallery-prev" aria-label="Previous screenshot">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button class="gallery-arrow" id="gallery-next" aria-label="Next screenshot">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         TECH + FAQ
+         ======================================================== -->
+    <section class="section" aria-labelledby="faq-title">
+      <div class="container">
+        <header class="section-header reveal">
+          <span class="section-label">FAQ</span>
+          <h2 id="faq-title" class="section-title">Questions, answered plainly</h2>
+        </header>
+
+        <div class="faq reveal">
+          <details class="faq-item">
+            <summary>Does Reelbox stream or host any video?</summary>
+            <p class="faq-answer">No. It shows metadata from TMDB and links out to services that legitimately hold the licence. Nothing is embedded, indexed or mirrored.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Where does the streaming availability come from?</summary>
+            <p class="faq-answer">TMDB's watch-providers endpoint, which is sourced from JustWatch. The app only reads it — it doesn't scrape or re-publish provider catalogues.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Do I need an account?</summary>
+            <p class="faq-answer">No. There is no sign-up, no login and no server-side profile. Your watchlist lives in SharedPreferences on the device and nothing is uploaded.</p>
+          </details>
+          <details class="faq-item">
+            <summary>What happens when a title isn't available in my region?</summary>
+            <p class="faq-answer">The panel says so plainly instead of showing an empty row. Switch the region from the pill and the app re-fetches availability for that country.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Does it work offline?</summary>
+            <p class="faq-answer">The catalog needs a connection. The watchlist and your region choice are local, so they survive a cold start with no network and stay readable.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Why is the build labelled a debug APK?</summary>
+            <p class="faq-answer">Reelbox isn't on the Play Store yet, so the build is signed with a local keystore and distributed directly. It installs fine once you allow your browser to install unknown apps.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         DOWNLOAD
+         ======================================================== -->
+    <section id="download" class="section section-alt" aria-labelledby="download-title">
+      <div class="container">
+        <header class="section-header reveal">
+          <span class="section-label">Get the app</span>
+          <h2 id="download-title" class="section-title">Install the debug build</h2>
+        </header>
+
+        <div class="download-wrap reveal">
+          <div class="download-main">
+            <div class="app-badge">
+              <img src="app-icon.png" alt="" width="56" height="56" decoding="async">
+              <span class="app-badge-text">
+                <strong>Reelbox</strong>
+                <span>dev.reelbox.debug · 1.0-debug</span>
+              </span>
+            </div>
+
+            <h3 class="download-title">A native Android browser for the whole catalog</h3>
+            <p class="download-subtitle">
+              One APK, no Play Store, no account. Sideload it, grant the install permission once,
+              and you're browsing in under a minute.
+            </p>
+
+            <div class="download-actions">
+              <a href="reelbox-1.0-debug.apk" download class="btn btn-primary btn-lg" id="download-btn" data-apk-url="reelbox-1.0-debug.apk">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download APK
+              </a>
+              <a href="#" class="btn btn-secondary btn-lg" id="source-btn" data-repo-url="">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+                View source
+              </a>
+            </div>
+
+            <p class="download-status" id="download-status" role="status" aria-live="polite"></p>
+
+            <dl class="download-meta">
+              <div><dt>Version</dt><dd>1.0-debug</dd></div>
+              <div><dt>Size</dt><dd>19 MB</dd></div>
+              <div><dt>Minimum</dt><dd>Android 8.0</dd></div>
+              <div><dt>Permissions</dt><dd>Internet only</dd></div>
+            </dl>
+          </div>
+
+          <div class="install-steps">
+            <h3>Installing takes three steps</h3>
+            <ol class="install-list">
+              <li><span><strong>Allow installs.</strong> Open Settings → Apps → Special app access → Install unknown apps and allow your browser or file manager.</span></li>
+              <li><span><strong>Download the APK</strong> and confirm the install prompt. It is signed with a local debug keystore, so Android will warn you once.</span></li>
+              <li><span><strong>Open Reelbox.</strong> No account, no onboarding wall — you land straight on the home rows. Pick your region from the pill in the top bar.</span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==========================================================
+       FOOTER
+       ========================================================== -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-logo"><span class="logo-mark">REEL</span><span class="logo-text">BOX</span></div>
+          <p class="footer-tagline">
+            A native Android catalog browser for movies and TV, with legal streaming availability
+            for twelve regions. Metadata from TMDB. This app does not host or stream any video.
+          </p>
+        </div>
+
+        <nav class="footer-col" aria-label="Product">
+          <h4>Product</h4>
+          <ul>
+            <li><a class="footer-link" href="#features">Features</a></li>
+            <li><a class="footer-link" href="#where-to-watch">Where to watch</a></li>
+            <li><a class="footer-link" href="#screenshots">Screenshots</a></li>
+            <li><a class="footer-link" href="#download">Download</a></li>
+          </ul>
+        </nav>
+
+        <nav class="footer-col" aria-label="Project">
+          <h4>Project</h4>
+          <ul>
+            <li><a class="footer-link" href="#" data-repo-url="">Source code</a></li>
+            <li><a class="footer-link" href="https://www.themoviedb.org/" rel="noopener noreferrer" target="_blank">TMDB</a></li>
+            <li><a class="footer-link" href="https://www.justwatch.com/" rel="noopener noreferrer" target="_blank">JustWatch</a></li>
+            <li><a class="footer-link" href="#download">Privacy</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 Reelbox. Not affiliated with TMDB or JustWatch.</p>
+        <p class="attribution">
+          This product uses the TMDB API but is not endorsed or certified by TMDB.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      /* ------------------------------------------------------------
+         1. SCROLL REVEAL
+         ------------------------------------------------------------ */
+      var revealables = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window && !prefersReducedMotion.matches) {
+        var revealObserver = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+        revealables.forEach(function (el) { revealObserver.observe(el); });
+      } else {
+        revealables.forEach(function (el) { el.classList.add('visible'); });
+      }
+
+      /* ------------------------------------------------------------
+         2. HEADER — scrolled state
+         ------------------------------------------------------------ */
+      var header = document.getElementById('site-header');
+      var onScroll = function () {
+        header.classList.toggle('scrolled', window.scrollY > 12);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      /* ------------------------------------------------------------
+         3. MOBILE NAVIGATION
+         ------------------------------------------------------------ */
+      var navToggle = document.getElementById('nav-toggle');
+      var mobileNav = document.getElementById('mobile-nav');
+
+      function setNav(open) {
+        navToggle.setAttribute('aria-expanded', String(open));
+        navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        mobileNav.classList.toggle('open', open);
+      }
+
+      navToggle.addEventListener('click', function () {
+        setNav(navToggle.getAttribute('aria-expanded') !== 'true');
+      });
+
+      mobileNav.addEventListener('click', function (e) {
+        if (e.target.closest('a')) setNav(false);
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && navToggle.getAttribute('aria-expanded') === 'true') {
+          setNav(false);
+          navToggle.focus();
+        }
+      });
+
+      window.addEventListener('resize', function () {
+        if (window.innerWidth >= 1024) setNav(false);
+      });
+
+      /* ------------------------------------------------------------
+         4. SMOOTH ANCHORS  (with fixed-header offset)
+         ------------------------------------------------------------ */
+      var headerOffset = function () {
+        return (header ? header.offsetHeight : 64) + 16;
+      };
+
+      document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+        anchor.addEventListener('click', function (e) {
+          var hash = this.getAttribute('href');
+          if (!hash || hash === '#') return;
+
+          var target = document.querySelector(hash);
+          if (!target) return;
+
+          e.preventDefault();
+          setNav(false);
+
+          var top = target.getBoundingClientRect().top + window.scrollY - headerOffset();
+          window.scrollTo({
+            top: Math.max(top, 0),
+            behavior: prefersReducedMotion.matches ? 'auto' : 'smooth'
+          });
+
+          if (history.pushState) history.pushState(null, '', hash);
+
+          // Move focus without a second scroll jump.
+          target.setAttribute('tabindex', '-1');
+          target.focus({ preventScroll: true });
+        });
+      });
+
+      /* ------------------------------------------------------------
+         5. SCROLLSPY — highlight the active section
+         ------------------------------------------------------------ */
+      var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-desktop .nav-link'));
+      var sections = navLinks
+        .map(function (link) { return document.querySelector(link.getAttribute('href')); })
+        .filter(Boolean);
+
+      if (sections.length && 'IntersectionObserver' in window) {
+        var visible = new Map();
+        var spy = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) visible.set(entry.target.id, entry.intersectionRatio);
+            else visible.delete(entry.target.id);
+          });
+
+          var bestId = null;
+          var bestRatio = 0;
+          visible.forEach(function (ratio, id) {
+            if (ratio > bestRatio) { bestRatio = ratio; bestId = id; }
+          });
+
+          navLinks.forEach(function (link) {
+            var isActive = bestId !== null && link.getAttribute('href') === '#' + bestId;
+            if (isActive) link.setAttribute('aria-current', 'true');
+            else link.removeAttribute('aria-current');
+          });
+        }, { threshold: [0, 0.15, 0.35, 0.6], rootMargin: '-80px 0px -45% 0px' });
+
+        sections.forEach(function (section) { spy.observe(section); });
+      }
+
+      /* ------------------------------------------------------------
+         6. SCREENSHOT GALLERY
+         ------------------------------------------------------------ */
+      var track = document.getElementById('gallery-track');
+      var dotsWrap = document.getElementById('gallery-dots');
+      var prevBtn = document.getElementById('gallery-prev');
+      var nextBtn = document.getElementById('gallery-next');
+      var cards = track ? Array.prototype.slice.call(track.querySelectorAll('.shot-card')) : [];
+
+      if (track && cards.length) {
+        var dots = cards.map(function (card, i) {
+          var dot = document.createElement('button');
+          dot.className = 'gallery-dot';
+          dot.type = 'button';
+          dot.setAttribute('aria-label', 'Go to screenshot ' + (i + 1) + ' of ' + cards.length);
+          dot.addEventListener('click', function () {
+            cards[i].scrollIntoView({ behavior: prefersReducedMotion.matches ? 'auto' : 'smooth', block: 'nearest', inline: 'center' });
+          });
+          dotsWrap.appendChild(dot);
+          return dot;
+        });
+
+        var currentIndex = 0;
+
+        function updateGallery() {
+          var trackRect = track.getBoundingClientRect();
+          var center = trackRect.left + trackRect.width / 2;
+
+          var best = 0;
+          var bestDist = Infinity;
+          cards.forEach(function (card, i) {
+            var rect = card.getBoundingClientRect();
+            var dist = Math.abs((rect.left + rect.width / 2) - center);
+            if (dist < bestDist) { bestDist = dist; best = i; }
+          });
+
+          currentIndex = best;
+          dots.forEach(function (dot, i) {
+            if (i === best) dot.setAttribute('aria-current', 'true');
+            else dot.removeAttribute('aria-current');
+          });
+
+          var maxScroll = track.scrollWidth - track.clientWidth;
+          prevBtn.disabled = track.scrollLeft <= 4;
+          nextBtn.disabled = track.scrollLeft >= maxScroll - 4;
+        }
+
+        function step(direction) {
+          var target = cards[Math.max(0, Math.min(cards.length - 1, currentIndex + direction))];
+          if (!target) return;
+          target.scrollIntoView({ behavior: prefersReducedMotion.matches ? 'auto' : 'smooth', block: 'nearest', inline: 'center' });
+        }
+
+        prevBtn.addEventListener('click', function () { step(-1); });
+        nextBtn.addEventListener('click', function () { step(1); });
+
+        track.addEventListener('scroll', function () {
+          window.requestAnimationFrame(updateGallery);
+        }, { passive: true });
+        window.addEventListener('resize', updateGallery);
+        updateGallery();
+      }
+
+      /* ------------------------------------------------------------
+         7. DOWNLOAD / SOURCE LINKS
+         Set data-apk-url and data-repo-url to real URLs.
+         ------------------------------------------------------------ */
+      var status = document.getElementById('download-status');
+
+      function wireLink(el, urlAttr, pendingMessage) {
+        if (!el) return;
+        el.addEventListener('click', function (e) {
+          var url = (el.getAttribute(urlAttr) || '').trim();
+          if (url) return; // real link — let the browser handle it
+          e.preventDefault();
+          if (status) status.textContent = pendingMessage;
+        });
+      }
+
+      wireLink(
+        document.getElementById('download-btn'),
+        'data-apk-url',
+        'The APK is not published yet. Build it from source, or point this button at a release URL.'
+      );
+      wireLink(
+        document.getElementById('source-btn'),
+        'data-repo-url',
+        'The repository URL has not been set on this deployment yet.'
+      );
+
+      document.querySelectorAll('[data-repo-url]').forEach(function (el) {
+        if (el.id === 'source-btn') return;
+        el.addEventListener('click', function (e) {
+          var url = (el.getAttribute('data-repo-url') || '').trim();
+          if (!url) {
+            e.preventDefault();
+            if (status) status.textContent = 'The repository URL has not been set on this deployment yet.';
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

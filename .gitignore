@@ -1,0 +1,30 @@
+# ---- Android / Gradle ----
+*.iml
+.gradle/
+.kotlin/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+*.apk.idsig
+*.aab
+
+# ---- IDE ----
+.idea/
+.vscode/
+
+# ---- Local machine config & secrets ----
+local.properties
+*.jks
+*.keystore
+keystore.properties
+release.properties
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Website ----
+# Full-resolution device captures; the shipped WebP files live in website/.
+website/.capture/
