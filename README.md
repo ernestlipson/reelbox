@@ -70,7 +70,7 @@ Or open the `reelbox/` folder in Android Studio and press Run.
 ## Website
 
 `website/` holds the single-file marketing site (`index.html`, no build step) plus the
-downloadable debug APK. Open it directly, or serve it locally:
+downloadable release APK. Open it directly, or serve it locally:
 
 ```bash
 cd website && python3 -m http.server 8899

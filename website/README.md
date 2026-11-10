@@ -9,7 +9,7 @@ the mobile menu, scrollspy, reveal animations, gallery and FAQ.
 | File | Purpose |
 |---|---|
 | `index.html` | The entire site: markup, CSS and JS inline |
-| `reelbox-1.0-debug.apk` | The APK the Download buttons serve (19 MB) |
+| `reelbox-1.0.apk` | The signed release APK the Download buttons serve (2.2 MB) |
 | `home_real.webp` | Home screen — hero mockup + gallery |
 | `detail_real.webp` | Detail screen — gallery |
 | `providers_real.webp` | "Where to watch" — spotlight + gallery |
@@ -51,12 +51,13 @@ nginx). The only runtime requirement is HTTPS — Google Fonts and the TMDB link
 The APK lives next to `index.html`, so the buttons just point at it:
 
 ```html
-<a href="reelbox-1.0-debug.apk" download id="download-btn" data-apk-url="reelbox-1.0-debug.apk">
+<a href="reelbox-1.0.apk" download id="download-btn" data-apk-url="reelbox-1.0.apk">
 ```
 
-Rebuild with `./gradlew assembleDebug`, copy `app/build/outputs/apk/debug/app-debug.apk`
+Rebuild with `./gradlew :app:assembleRelease` (needs `keystore.properties` and the release
+keystore in the repo root — both gitignored), copy `app/build/outputs/apk/release/app-release.apk`
 into this folder under a versioned name, then update `href`, `data-apk-url`, and the
-`Version` / `Size` cells in `.download-meta` (search for `1.0-debug`).
+`Version` / `Size` cells in `.download-meta` (search for `reelbox-1.0`).
 
 If you'd rather link a GitHub release than host the binary, point `href` and `data-apk-url`
 at the release URL and drop the local APK. With `data-apk-url` empty, the button shows an
@@ -88,7 +89,7 @@ container, no box-shadows (borders and elevation by background only). Keep new s
 that scale rather than inventing values.
 
 `../PRODUCT.md` bans gradient text, glassmorphism, hero-metric templates and marketing
-fluff — that's why the copy is specific (12 regions, 19 MB, no account) instead of
+fluff — that's why the copy is specific (12 regions, 2.2 MB, no account) instead of
 superlative.
 
 ## Before you ship

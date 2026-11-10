@@ -23,6 +23,15 @@ fun prop(name: String, fallback: String = ""): String =
 val tmdbKey: String = prop("TMDB_API_KEY")
 val tmdbToken: String = prop("TMDB_READ_TOKEN")
 
+// Release signing comes from keystore.properties (never commit that file or the .jks).
+// Without it (e.g. on CI) the release build falls back to the debug key.
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val hasReleaseKeystore = keystoreProps.getProperty("storeFile")
+    ?.let { rootProject.file(it).exists() } == true
+
 android {
     namespace = "dev.reelbox"
     compileSdk = 36
@@ -39,11 +48,22 @@ android {
         buildConfigField("String", "DEFAULT_REGION", "\"GH\"")
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (hasReleaseKeystore) "release" else "debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
