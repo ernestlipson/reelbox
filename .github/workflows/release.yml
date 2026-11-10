@@ -1,0 +1,81 @@
+name: Build & Publish Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Version tag (e.g. v1.0.0)'
+        required: false
+        default: ''
+      release_notes:
+        description: 'Release description / notes'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Configure environment
+        run: |
+          sed -i '/org.gradle.java.home/d' gradle.properties
+          chmod +x gradlew
+
+      - name: Build APKs (Release & Debug)
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          TMDB_READ_TOKEN: ${{ secrets.TMDB_READ_TOKEN }}
+        run: |
+          ./gradlew :app:assembleRelease :app:assembleDebug
+
+      - name: Prepare APK release artifacts
+        id: prepare_artifacts
+        run: |
+          TAG="${{ github.event.inputs.tag_name }}"
+          if [ -z "$TAG" ]; then
+            if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+              TAG="${GITHUB_REF#refs/tags/}"
+            else
+              TAG="v1.0.${{ github.run_number }}"
+            fi
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          mkdir -p release-artifacts
+          cp app/build/outputs/apk/release/app-release.apk release-artifacts/reelbox-${TAG}.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release-artifacts/reelbox-${TAG}-debug.apk
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.prepare_artifacts.outputs.tag }}
+          name: "Reelbox ${{ steps.prepare_artifacts.outputs.tag }}"
+          body: ${{ github.event.inputs.release_notes }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: |
+            release-artifacts/reelbox-${{ steps.prepare_artifacts.outputs.tag }}.apk
+            release-artifacts/reelbox-${{ steps.prepare_artifacts.outputs.tag }}-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

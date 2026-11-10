@@ -141,7 +141,7 @@ fun PlayerScreen(
         insetsController?.hide(WindowInsetsCompat.Type.systemBars())
 
         onDispose {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             insetsController?.show(WindowInsetsCompat.Type.systemBars())
             webViewRef?.apply {
                 stopLoading()
