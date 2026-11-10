@@ -29,3 +29,5 @@ Thumbs.db
 # ---- Website ----
 # Full-resolution device captures; the shipped WebP files live in website/.
 website/.capture/
+.vercel
+.env*
