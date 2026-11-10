@@ -16,6 +16,7 @@ captures/
 
 # ---- Local machine config & secrets ----
 local.properties
+google-services.json
 *.jks
 *.keystore
 keystore.properties

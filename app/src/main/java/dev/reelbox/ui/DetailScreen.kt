@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.reelbox.analytics.AppAnalytics
 import dev.reelbox.data.Graph
 import dev.reelbox.data.Provider
 import dev.reelbox.data.RegionProviders
@@ -222,7 +223,10 @@ fun DetailScreen(
 
                         detail.trailer?.let { trailer ->
                             OutlinedButton(
-                                onClick = { openUrl("https://www.youtube.com/watch?v=${trailer.key}") },
+                                onClick = {
+                                    AppAnalytics.logPlayTrailer(detail.displayTitle, type, id)
+                                    openUrl("https://www.youtube.com/watch?v=${trailer.key}")
+                                },
                                 shape = RoundedCornerShape(10.dp),
                             ) {
                                 Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -268,6 +272,7 @@ fun DetailScreen(
                         region = region,
                         providers = providers,
                         onProviderClick = { provider ->
+                            AppAnalytics.logProviderClick(provider.name, detail.displayTitle, type)
                             StreamingApps.open(context, provider, providers?.link)
                         },
                         onOpenLink = { url -> openUrl(url) },
@@ -316,7 +321,10 @@ fun DetailScreen(
     if (showRegions) {
         RegionDialog(
             current = region,
-            onSelect = { Graph.settings.setRegion(it) },
+            onSelect = {
+                AppAnalytics.logRegionChange(it)
+                Graph.settings.setRegion(it)
+            },
             onDismiss = { showRegions = false },
         )
     }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import dev.reelbox.analytics.AppAnalytics
 import dev.reelbox.data.Graph
 import dev.reelbox.data.HomeRow
 import dev.reelbox.data.MediaDetail
@@ -100,6 +101,7 @@ class SearchViewModel : ViewModel() {
                     _state.value = _state.value.copy(loading = true, error = null)
                     runCatching { Graph.repository.search(q) }
                         .onSuccess { results ->
+                            AppAnalytics.logSearch(q)
                             _state.value = State(loading = false, error = null, results = results, searched = true)
                         }
                         .onFailure { e ->
@@ -173,6 +175,7 @@ class DetailViewModel(
 
     fun toggleSaved() {
         val d = _state.value.detail ?: return
+        val wasSaved = Graph.watchlist.contains(id, type)
         Graph.watchlist.toggle(
             SavedItem(
                 id = d.id,
@@ -183,6 +186,11 @@ class DetailViewModel(
                 rating = d.voteAverage,
             ),
         )
+        if (wasSaved) {
+            AppAnalytics.logRemoveFromWatchlist(type, d.id, d.displayTitle)
+        } else {
+            AppAnalytics.logAddToWatchlist(type, d.id, d.displayTitle)
+        }
     }
 
     companion object {

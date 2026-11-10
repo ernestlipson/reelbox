@@ -13,6 +13,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import dev.reelbox.analytics.AppAnalytics
 import dev.reelbox.data.Movie
 import dev.reelbox.ui.theme.Accent
 import dev.reelbox.ui.theme.Ink
@@ -53,12 +55,20 @@ fun ReelboxApp() {
     val currentRoute = backStackEntry?.destination?.route
     val isPlayerScreen = currentRoute?.startsWith("player") == true
 
+    LaunchedEffect(currentRoute) {
+        currentRoute?.let { route ->
+            AppAnalytics.logScreenView(screenName = route)
+        }
+    }
+
     fun open(movie: Movie) {
         val type = if (movie.isTv) "tv" else "movie"
+        AppAnalytics.logSelectItem(mediaType = type, id = movie.id, title = movie.displayTitle)
         nav.navigate("detail/$type/${movie.id}")
     }
 
     fun play(type: String, id: Int, title: String) {
+        AppAnalytics.logPlayTrailer(title = title, mediaType = type, id = id)
         val encodedTitle = Uri.encode(title)
         nav.navigate("player/$type/$id?title=$encodedTitle")
     }

@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.reelbox.analytics.AppAnalytics
 import dev.reelbox.data.Graph
 import dev.reelbox.data.Movie
 import dev.reelbox.data.TmdbImages
@@ -117,7 +118,10 @@ fun HomeScreen(
     if (showRegions) {
         RegionDialog(
             current = region,
-            onSelect = { Graph.settings.setRegion(it) },
+            onSelect = {
+                AppAnalytics.logRegionChange(it)
+                Graph.settings.setRegion(it)
+            },
             onDismiss = { showRegions = false },
         )
     }

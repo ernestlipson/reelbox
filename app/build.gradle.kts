@@ -8,6 +8,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // Read TMDB credentials from local.properties (never commit that file).
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
@@ -74,6 +78,9 @@ kotlin {
 
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.12.01"))
+    implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
+    implementation("com.google.firebase:firebase-analytics")
+
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
