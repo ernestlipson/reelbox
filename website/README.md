@@ -69,14 +69,22 @@ inline hint in `#download-status` instead of doing nothing.
 Installed copies of Reelbox (1.1 and later) fetch `version.json` at launch and show an
 "Update available" prompt when its `versionCode` is higher than their own.
 
-1. Bump `versionCode` and `versionName` in `app/build.gradle.kts`.
-2. `./gradlew :app:assembleRelease` — it must be signed with the same release keystore,
-   or Android refuses to install it over the existing app.
-3. Copy `app/build/outputs/apk/release/app-release.apk` here as `reelbox-<version>.apk`
-   and remove the old one.
-4. Update `version.json` (`versionCode`, `versionName`, `apkUrl`, `notes`) and the
-   download links / version cells in `index.html`.
-5. Commit and push — Vercel redeploys and users are prompted on their next launch.
+One command does the whole release (run it from the repo root):
+
+```bash
+python3 scripts/release.py 1.2 "What changed, in a sentence or two." --push
+```
+
+It bumps `versionCode` / `versionName` in `app/build.gradle.kts`, builds the signed release
+APK, swaps it into this folder as `reelbox-<version>.apk`, updates `version.json` and the
+download link, version and size in `index.html`, commits, and (with `--push`) pushes so
+Vercel redeploys. Users are prompted on their next launch.
+
+- Add `--dry-run` to preview the changes without touching anything.
+- Leave off `--push` to review the commit first, then `git push` yourself.
+- The notes text is what users read in the update dialog.
+- It needs `keystore.properties` and the release keystore in the repo root; a build signed
+  with any other key cannot install over the existing app.
 
 ## Update the repo link
 
