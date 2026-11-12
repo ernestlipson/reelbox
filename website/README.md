@@ -9,7 +9,7 @@ the mobile menu, scrollspy, reveal animations, gallery and FAQ.
 | File | Purpose |
 |---|---|
 | `index.html` | The entire site: markup, CSS and JS inline |
-| `reelbox-1.1.apk` | The signed release APK the Download buttons serve (2.2 MB) |
+| `reelbox-1.2.apk` | The signed release APK the Download buttons serve (2.2 MB) |
 | `version.json` | Latest release (version code, name, APK URL, notes) — the app reads this at launch to offer updates |
 | `home_real.webp` | Home screen — hero mockup + gallery |
 | `detail_real.webp` | Detail screen — gallery |
@@ -52,7 +52,7 @@ nginx). The only runtime requirement is HTTPS — Google Fonts and the TMDB link
 The APK lives next to `index.html`, so the buttons just point at it:
 
 ```html
-<a href="reelbox-1.1.apk" download id="download-btn" data-apk-url="reelbox-1.1.apk">
+<a href="reelbox-1.2.apk" download id="download-btn" data-apk-url="reelbox-1.2.apk">
 ```
 
 Rebuild with `./gradlew :app:assembleRelease` (needs `keystore.properties` and the release
