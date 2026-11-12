@@ -6,9 +6,12 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
+import android.media.AudioManager
 import android.os.Message
+import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -23,8 +26,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,8 +47,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeMute
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.BrightnessHigh
+import androidx.compose.material.icons.filled.BrightnessLow
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.WarningAmber
@@ -65,14 +76,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -91,6 +107,8 @@ import dev.reelbox.ui.theme.InkElevated
 import dev.reelbox.ui.theme.TextPrimary
 import dev.reelbox.ui.theme.TextSecondary
 import kotlinx.coroutines.delay
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private fun Context.findActivity(): ComponentActivity? {
     var ctx = this
@@ -100,6 +118,18 @@ private fun Context.findActivity(): ComponentActivity? {
     }
     return null
 }
+
+private enum class GestureType {
+    NONE,
+    BRIGHTNESS,
+    VOLUME,
+}
+
+private data class GestureHudState(
+    val type: GestureType,
+    val percent: Float, // 0.0f .. 1.0f
+    val label: String,
+)
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -129,8 +159,108 @@ fun PlayerScreen(
     var isLoading by remember { mutableStateOf(true) }
     var progress by remember { mutableFloatStateOf(0f) }
     var showControls by remember { mutableStateOf(true) }
+    var isPlaying by remember { mutableStateOf(true) }
     var statusNotice by remember { mutableStateOf<String?>(null) }
     var allServersFailed by remember { mutableStateOf(false) }
+
+    // Screen dimensions for gesture partitioning
+    var screenWidth by remember { mutableIntStateOf(0) }
+    var screenHeight by remember { mutableIntStateOf(0) }
+
+    // Audio & Volume controls
+    val audioManager = remember(context) {
+        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    }
+    val maxVolume = remember(audioManager) {
+        audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+    }
+    var currentVolume by remember {
+        mutableIntStateOf(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC))
+    }
+    var volumeAccumulator by remember {
+        mutableFloatStateOf(currentVolume.toFloat())
+    }
+
+    // Brightness controls
+    var brightnessLevel by remember {
+        val windowBrightness = activity?.window?.attributes?.screenBrightness ?: -1f
+        val initial = if (windowBrightness >= 0f) {
+            windowBrightness
+        } else {
+            runCatching {
+                val sys = Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+                sys / 255f
+            }.getOrDefault(0.5f)
+        }
+        mutableFloatStateOf(initial.coerceIn(0.02f, 1.0f))
+    }
+
+    // Gesture indicator HUD (Brightness / Volume / Seek pill)
+    var gestureHud by remember { mutableStateOf<GestureHudState?>(null) }
+    var lastHudUpdate by remember { mutableLongStateOf(0L) }
+
+    // Double-tap tracking
+    var lastTapTime by remember { mutableLongStateOf(0L) }
+    var lastTapOffset by remember { mutableStateOf(Offset.Zero) }
+
+    fun applyBrightness(deltaFraction: Float) {
+        val newBrightness = (brightnessLevel + deltaFraction).coerceIn(0.02f, 1.0f)
+        brightnessLevel = newBrightness
+        activity?.window?.let { win ->
+            val lp = win.attributes
+            lp.screenBrightness = newBrightness
+            win.attributes = lp
+        }
+        gestureHud = GestureHudState(
+            type = GestureType.BRIGHTNESS,
+            percent = newBrightness,
+            label = "Brightness ${(newBrightness * 100).toInt()}%",
+        )
+        lastHudUpdate = System.currentTimeMillis()
+    }
+
+    fun applyVolume(deltaFraction: Float) {
+        val newAcc = (volumeAccumulator + deltaFraction * maxVolume).coerceIn(0f, maxVolume.toFloat())
+        volumeAccumulator = newAcc
+        val newVol = newAcc.roundToInt().coerceIn(0, maxVolume)
+        if (newVol != currentVolume) {
+            currentVolume = newVol
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
+        }
+        val pct = newAcc / maxVolume.toFloat()
+        gestureHud = GestureHudState(
+            type = GestureType.VOLUME,
+            percent = pct,
+            label = "Volume ${(pct * 100).toInt()}%",
+        )
+        lastHudUpdate = System.currentTimeMillis()
+    }
+
+    fun seekRelative(seconds: Int) {
+        webViewRef?.evaluateJavascript(
+            """
+            (function() {
+                var v = document.querySelector('video');
+                if (v) {
+                    v.currentTime = Math.max(0, v.currentTime + ($seconds));
+                }
+            })();
+            """.trimIndent(),
+            null,
+        )
+        val sign = if (seconds > 0) "+$seconds" else "$seconds"
+        statusNotice = "${sign}s"
+    }
+
+    fun togglePlayPause() {
+        isPlaying = !isPlaying
+        val js = if (isPlaying) {
+            "var v = document.querySelector('video'); if (v) v.play();"
+        } else {
+            "var v = document.querySelector('video'); if (v) v.pause();"
+        }
+        webViewRef?.evaluateJavascript(js, null)
+    }
 
     // Automatic server failover helper
     fun tryNextServer(reason: String) {
@@ -147,15 +277,23 @@ fun PlayerScreen(
         }
     }
 
-    // Auto-dismiss status notice after 4 seconds
+    // Auto-dismiss status notice after 3.5 seconds
     LaunchedEffect(statusNotice) {
         if (statusNotice != null) {
-            delay(4000)
+            delay(3500)
             statusNotice = null
         }
     }
 
-    // Auto-hide controls after 4.5 seconds of user inactivity
+    // Auto-dismiss gesture indicator HUD 1.2 seconds after gesture ends
+    LaunchedEffect(lastHudUpdate) {
+        if (lastHudUpdate > 0) {
+            delay(1200)
+            gestureHud = null
+        }
+    }
+
+    // Auto-hide top controls HUD after 4.5 seconds of user inactivity
     LaunchedEffect(showControls) {
         if (showControls) {
             delay(4500)
@@ -164,6 +302,12 @@ fun PlayerScreen(
     }
 
     fun exitPlayer() {
+        // Reset window brightness override to system default
+        activity?.window?.let { win ->
+            val lp = win.attributes
+            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            win.attributes = lp
+        }
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         activity?.window?.let { WindowCompat.getInsetsController(it, it.decorView) }
             ?.show(WindowInsetsCompat.Type.systemBars())
@@ -192,6 +336,11 @@ fun PlayerScreen(
         insetsController?.hide(WindowInsetsCompat.Type.systemBars())
 
         onDispose {
+            activity?.window?.let { win ->
+                val lp = win.attributes
+                lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                win.attributes = lp
+            }
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             insetsController?.show(WindowInsetsCompat.Type.systemBars())
             webViewRef?.apply {
@@ -207,11 +356,9 @@ fun PlayerScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) {
-                showControls = !showControls
+            .onSizeChanged { size ->
+                screenWidth = size.width
+                screenHeight = size.height
             },
     ) {
         // Video WebView with AdBlocker and Server Failover
@@ -330,7 +477,6 @@ fun PlayerScreen(
                             )
 
                             val isAllowed = allowedHosts.any { targetHost.contains(it) }
-                            // Block any external popup navigation
                             return !isAllowed
                         }
 
@@ -393,6 +539,70 @@ fun PlayerScreen(
             )
         }
 
+        // Gesture Overlay Layer: Handles Brightness, Volume, Single Tap & Double Tap
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(screenWidth, screenHeight) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val startOffset = down.position
+                        var isDragging = false
+                        val gestureType = if (screenWidth > 0 && startOffset.x < screenWidth * 0.5f) {
+                            GestureType.BRIGHTNESS
+                        } else {
+                            GestureType.VOLUME
+                        }
+
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+
+                            if (change.changedToUp()) {
+                                if (!isDragging) {
+                                    // Tap or Double Tap detection
+                                    val now = System.currentTimeMillis()
+                                    val timeDiff = now - lastTapTime
+                                    val dist = (startOffset - lastTapOffset).getDistance()
+
+                                    if (timeDiff < 320 && dist < 120f) {
+                                        // Double tap: seek
+                                        if (screenWidth > 0 && startOffset.x < screenWidth * 0.5f) {
+                                            seekRelative(-10)
+                                        } else {
+                                            seekRelative(10)
+                                        }
+                                        lastTapTime = 0L
+                                    } else {
+                                        lastTapTime = now
+                                        lastTapOffset = startOffset
+                                        showControls = !showControls
+                                    }
+                                }
+                                break
+                            }
+
+                            val totalDragY = change.position.y - startOffset.y
+                            if (!isDragging && abs(totalDragY) > viewConfiguration.touchSlop) {
+                                isDragging = true
+                            }
+
+                            if (isDragging) {
+                                change.consume()
+                                val deltaY = -(change.position.y - change.previousPosition.y)
+                                val sweepFraction = deltaY / (screenHeight * 0.55f).coerceAtLeast(100f)
+
+                                if (gestureType == GestureType.BRIGHTNESS) {
+                                    applyBrightness(sweepFraction)
+                                } else if (gestureType == GestureType.VOLUME) {
+                                    applyVolume(sweepFraction)
+                                }
+                            }
+                        }
+                    }
+                },
+        )
+
         // Top loading progress
         if (isLoading) {
             LinearProgressIndicator(
@@ -405,7 +615,72 @@ fun PlayerScreen(
             )
         }
 
-        // Auto-switch Status Pill Notification
+        // Gesture HUD Indicator (Brightness / Volume Capsule)
+        AnimatedVisibility(
+            visible = gestureHud != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center),
+        ) {
+            gestureHud?.let { hud ->
+                Surface(
+                    color = Color.Black.copy(alpha = 0.85f),
+                    shape = RoundedCornerShape(24.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.width(170.dp),
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+                    ) {
+                        val icon = when (hud.type) {
+                            GestureType.BRIGHTNESS -> {
+                                if (hud.percent > 0.66f) Icons.Filled.BrightnessHigh
+                                else if (hud.percent > 0.33f) Icons.Filled.BrightnessMedium
+                                else Icons.Filled.BrightnessLow
+                            }
+                            GestureType.VOLUME -> {
+                                if (hud.percent > 0.5f) Icons.AutoMirrored.Filled.VolumeUp
+                                else if (hud.percent > 0.01f) Icons.AutoMirrored.Filled.VolumeDown
+                                else Icons.AutoMirrored.Filled.VolumeMute
+                            }
+                            else -> Icons.Filled.BrightnessMedium
+                        }
+
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = Accent,
+                            modifier = Modifier.size(32.dp),
+                        )
+
+                        Spacer(Modifier.height(10.dp))
+
+                        LinearProgressIndicator(
+                            progress = { hud.percent },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(5.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = Accent,
+                            trackColor = Color.White.copy(alpha = 0.2f),
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Text(
+                            text = hud.label,
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+
+        // Auto-switch / Seek Status Pill Notification
         AnimatedVisibility(
             visible = statusNotice != null,
             enter = fadeIn(),
@@ -490,7 +765,7 @@ fun PlayerScreen(
             }
         }
 
-        // Quick Seek overlay controls (-10s / +10s) on tap
+        // Center Controls: Rewind 10s, Play/Pause, Forward 10s
         AnimatedVisibility(
             visible = showControls && customView == null && !allServersFailed,
             enter = fadeIn(),
@@ -498,21 +773,11 @@ fun PlayerScreen(
             modifier = Modifier.align(Alignment.Center),
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(48.dp),
+                horizontalArrangement = Arrangement.spacedBy(36.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(
-                    onClick = {
-                        webViewRef?.evaluateJavascript(
-                            """
-                            (function() {
-                                var v = document.querySelector('video');
-                                if (v) v.currentTime = Math.max(0, v.currentTime - 10);
-                            })();
-                            """.trimIndent(),
-                            null,
-                        )
-                    },
+                    onClick = { seekRelative(-10) },
                     modifier = Modifier
                         .size(52.dp)
                         .clip(CircleShape)
@@ -527,17 +792,22 @@ fun PlayerScreen(
                 }
 
                 IconButton(
-                    onClick = {
-                        webViewRef?.evaluateJavascript(
-                            """
-                            (function() {
-                                var v = document.querySelector('video');
-                                if (v) v.currentTime += 10;
-                            })();
-                            """.trimIndent(),
-                            null,
-                        )
-                    },
+                    onClick = { togglePlayPause() },
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(Accent),
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp),
+                    )
+                }
+
+                IconButton(
+                    onClick = { seekRelative(10) },
                     modifier = Modifier
                         .size(52.dp)
                         .clip(CircleShape)
